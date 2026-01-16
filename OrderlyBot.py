@@ -1,3 +1,4 @@
+import os
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -13,7 +14,7 @@ from telegram.ext import (
 )
 import sqlite3
 
-TOKEN = "8404161107:AAGEWJ4e1bXqaigVOfWl3u5SgYS7FcIWb1k"
+TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 5812937391
 
 # ================= DATABASE =================
