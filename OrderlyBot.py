@@ -218,4 +218,5 @@ app.add_handler(CallbackQueryHandler(callback_handler))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
 print("Bot is running...")
-app.run_polling()
+app.run_polling(close_loop=False)
+
