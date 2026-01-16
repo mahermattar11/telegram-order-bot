@@ -13,7 +13,31 @@ from telegram.ext import (
     filters,
 )
 import sqlite3
+from flask import Flask  # ← مكتبة Flask المضافة
+import threading  # ← لتشغيل Flask في الخلفية
 
+# ================= FLASK SERVER =================
+# إنشاء تطبيق Flask بسيط للـ Health Check
+web_app = Flask(__name__)
+
+@web_app.route('/')
+def home():
+    return "✅ Bot is running!", 200
+
+@web_app.route('/health')
+def health():
+    return "🟢 Healthy", 200
+
+def run_flask():
+    """تشغيل Flask على منفذ 10000"""
+    web_app.run(host='0.0.0.0', port=10000, debug=False)
+
+# تشغيل Flask في خيط منفصل
+flask_thread = threading.Thread(target=run_flask, daemon=True)
+flask_thread.start()
+print("✅ Flask health check server started on port 10000")
+
+# ================= BOT SETTINGS =================
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 5812937391
 
@@ -211,12 +235,19 @@ Size: {data.get('size', '-')}
 
     context.user_data.clear()
 
-# ================= RUN =================
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CallbackQueryHandler(callback_handler))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
+# ================= RUN BOT =================
+def main():
+    print("🚀 Starting OrderlyBot with Flask health check...")
+    
+    # إنشاء وتشغيل البوت
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(callback_handler))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
+    
+    print("✅ Bot is running...")
+    app.run_polling()
 
-print("Bot is running...")
-app.run_polling(close_loop=False)
-
+# ================= START EVERYTHING =================
+if __name__ == '__main__':
+    main()
