@@ -14,8 +14,8 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
 
 # ================= IMPORT FLASK FOR ADMIN PANEL =================
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
@@ -64,8 +64,8 @@ class Database:
             if not DATABASE_URL:
                 raise ValueError("DATABASE_URL not found in environment variables")
             
-            self.conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-            self.cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+            self.conn = psycopg.connect(DATABASE_URL, sslmode='require')
+            self.cursor = self.conn.cursor(row_factory=dict_row)
             print("✅ Connected to PostgreSQL successfully")
             self.create_tables()
         except Exception as e:
