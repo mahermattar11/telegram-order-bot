@@ -1,5 +1,6 @@
 import os
 import time
+import telegram.error
 import threading
 from datetime import datetime
 from telegram import (
@@ -729,11 +730,38 @@ def run_telegram_bot():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     
     print("✅ Bot handlers registered")
-    print("📊 Database status:", "PostgreSQL" if 'postgres' in str(db.conn) else "SQLite (Fallback)")
     print("🤖 Bot is polling...")
     
-    app.run_polling(drop_pending_updates=True, timeout=30, poll_interval=2)
-
+    # محاولة متعددة مع إعادة اتصال
+    max_attempts = 5
+    for attempt in range(max_attempts):
+        try:
+            app.run_polling(
+                drop_pending_updates=True,  # تجاهل التحديثات القديمة
+                allowed_updates=[],  # لا تطلب أي تحديثات (تفادي التعارض)
+                close_loop=False,
+                stop_signals=None  # لا يتوقف بالإشارات
+            )
+            break
+        except telegram.error.Conflict as e:
+            if attempt < max_attempts - 1:
+                wait_time = (attempt + 1) * 10  # 10, 20, 30, 40 ثانية
+                print(f"🔄 Conflict detected. Waiting {wait_time} seconds... (Attempt {attempt + 1}/{max_attempts})")
+                time.sleep(wait_time)
+                print("🔄 Restarting bot...")
+            else:
+                print("❌ Max attempts reached. Bot cannot start due to conflict.")
+                print("ℹ️ Starting Flask admin panel only...")
+                # يستمر بدون البوت
+                return
+        except Exception as e:
+            print(f"❌ Bot error: {e}")
+            if attempt < max_attempts - 1:
+                time.sleep(10)
+            else:
+                print("ℹ️ Starting Flask admin panel only...")
+                return
+            
 # ================= ENTRY POINT =================
 if __name__ == '__main__':
     print("🚀 Starting OrderlyBot with integrated admin panel...")
