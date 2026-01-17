@@ -1,0 +1,215 @@
+/* متغيرات الألوان */
+:root {
+    --primary: #4361ee;
+    --primary-dark: #3a56d4;
+    --secondary: #6c757d;
+    --success: #4cc9f0;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --dark: #1e1e2d;
+    --light: #f8f9fa;
+    --sidebar-width: 250px;
+    --border-radius: 12px;
+}
+
+/* الإعدادات العامة */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Cairo', sans-serif;
+    background-color: #f4f7fe;
+    color: #333;
+    overflow-x: hidden;
+}
+
+/* تخطيط الصفحة */
+.container-fluid {
+    padding: 0;
+}
+
+/* الشريط الجانبي */
+#sidebar {
+    background: var(--dark);
+    color: white;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: var(--sidebar-width);
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 12px 20px;
+    margin: 5px 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+#sidebar .nav-link i {
+    font-size: 1.2rem;
+    margin-left: 10px;
+    width: 24px;
+}
+
+#sidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+#sidebar .nav-link.active {
+    background: var(--primary) !important;
+    color: white;
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+}
+
+/* المحتوى الرئيسي */
+#content {
+    margin-right: var(--sidebar-width);
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* الكروت */
+.card-custom {
+    background: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.card-custom:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* صناديق الأيقونات */
+.icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.icon-box.bg-primary { background: rgba(67, 97, 238, 0.1); }
+.icon-box.bg-warning { background: rgba(255, 193, 7, 0.1); }
+.icon-box.bg-success { background: rgba(76, 201, 240, 0.1); }
+.icon-box.bg-info { background: rgba(23, 162, 184, 0.1); }
+
+/* الجداول */
+.table-responsive {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8fafc;
+    border-bottom: 2px solid #eef2f7;
+    color: #64748b;
+    font-weight: 600;
+    padding: 15px;
+    text-align: right;
+}
+
+.table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+    border-color: #f1f5f9;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(67, 97, 238, 0.02);
+}
+
+/* الأزرار */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+    border-radius: 8px;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* الشارات */
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+/* الصور الرمزية */
+.avatar {
+    width: 36px;
+    height: 36px;
+    background-color: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+/* التجاوب */
+@media (max-width: 768px) {
+    #sidebar {
+        width: 70px;
+    }
+    
+    #sidebar .nav-link span {
+        display: none;
+    }
+    
+    #sidebar .sidebar-header h4,
+    #sidebar .sidebar-header small {
+        display: none;
+    }
+    
+    #content {
+        margin-right: 70px;
+        padding: 15px;
+    }
+    
+    .card-custom {
+        padding: 15px;
+    }
+}
