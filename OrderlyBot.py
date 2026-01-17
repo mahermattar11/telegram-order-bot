@@ -721,9 +721,9 @@ def run_telegram_bot():
     """تشغيل بوت التليجرام"""
     print("🤖 Starting Telegram Bot...")
     
-    # تأخير 60 ثانية لتجنب التعارض
-    print("⏳ Waiting 60 seconds to avoid bot conflict...")
-    time.sleep(60)
+    # تأخير 120 ثانية (دقيقتين) لتجنب التعارض
+    print("⏳ Waiting 120 seconds to avoid bot conflict...")
+    time.sleep(120)
     print("✅ Delay completed, starting bot now...")
     
     app = ApplicationBuilder().token(TOKEN).build()
@@ -747,7 +747,7 @@ def run_telegram_bot():
     except Exception as e:
         print(f"❌ Bot error: {e}")
         print("ℹ️ Bot stopped, but Flask app continues...")
-            
+                    
 # ================= ENTRY POINT =================
 if __name__ == '__main__':
     print("🚀 Starting OrderlyBot with integrated admin panel...")
