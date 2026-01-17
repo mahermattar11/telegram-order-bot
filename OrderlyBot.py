@@ -589,6 +589,26 @@ def dashboard():
                          orders=recent_orders,
                          datetime=datetime)
 
+@admin_app.route('/reports')
+@login_required
+def reports():
+    """صفحة التقارير المتقدمة"""
+    
+    # جلب بيانات الطلبات الأخيرة
+    orders = db.get_orders_with_filters(limit=100)
+    
+    # تحليل البيانات
+    stats = {
+        'total_orders': len(orders),
+        'total_sales': sum(1 for o in orders if o['status'] == 'completed'),
+        'today_orders': sum(1 for o in orders if o['created_at'].date() == datetime.now().date())
+    }
+    
+    return render_template('reports.html', 
+                         stats=stats, 
+                         orders=orders,
+                         datetime=datetime)
+
 @admin_app.route('/login', methods=['GET', 'POST'])
 def login():
     """تسجيل الدخول"""
