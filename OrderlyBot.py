@@ -1,4 +1,5 @@
 import os
+import time
 import threading
 from datetime import datetime
 from telegram import (
@@ -731,7 +732,7 @@ def run_telegram_bot():
     print("📊 Database status:", "PostgreSQL" if 'postgres' in str(db.conn) else "SQLite (Fallback)")
     print("🤖 Bot is polling...")
     
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True, timeout=30, poll_interval=2)
 
 # ================= ENTRY POINT =================
 if __name__ == '__main__':
