@@ -66,12 +66,21 @@ class Database:
             if not DATABASE_URL:
                 raise ValueError("DATABASE_URL not found in environment variables")
             
+            # استخدم psycopg بدل psycopg2
             self.conn = psycopg.connect(DATABASE_URL, sslmode='require')
-            self.cursor = self.conn.cursor(row_factory=dict_row)
+            self.cursor = self.conn.cursor(row_factory=dict_row)  # تغيير هنا
             print("✅ Connected to PostgreSQL successfully")
+            
+            # اختبر الاتصال
+            self.cursor.execute("SELECT 1")
+            test = self.cursor.fetchone()
+            print(f"✅ Database test result: {test}")
+            
             self.create_tables()
         except Exception as e:
             print(f"❌ Database connection error: {e}")
+            import traceback
+            traceback.print_exc()  # طباعة تفاصيل الخطأ
             self.use_sqlite_as_fallback()
     
     def use_sqlite_as_fallback(self):
@@ -177,13 +186,18 @@ class Database:
                 1
             ))
             
-            order_id = self.cursor.fetchone()['id']
+            # تغيير هنا لأن psycopg يرجع tuple
+            result = self.cursor.fetchone()
+            order_id = result['id'] if isinstance(result, dict) else result[0]
+            
             self.conn.commit()
             print(f"✅ Order #{order_id} saved to database")
             return order_id
             
         except Exception as e:
             print(f"❌ Error saving order: {e}")
+            import traceback
+            traceback.print_exc()
             self.conn.rollback()
             return None
     
