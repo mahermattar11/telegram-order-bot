@@ -721,6 +721,11 @@ def run_telegram_bot():
     """تشغيل بوت التليجرام"""
     print("🤖 Starting Telegram Bot...")
     
+    # تأخير 60 ثانية لتجنب التعارض
+    print("⏳ Waiting 60 seconds to avoid bot conflict...")
+    time.sleep(60)
+    print("✅ Delay completed, starting bot now...")
+    
     app = ApplicationBuilder().token(TOKEN).build()
     
     app.add_handler(CommandHandler("start", start))
@@ -732,50 +737,16 @@ def run_telegram_bot():
     print("✅ Bot handlers registered")
     print("🤖 Bot is polling...")
     
-    # إعدادات لمنع التعارض نهائياً
     try:
         app.run_polling(
             drop_pending_updates=True,
-            poll_interval=10,           # زيادة الفاصل بين الطلبات
-            timeout=30,                 # زيادة وقت الانتظار
-            close_loop=False,
-            stop_signals=None,
-            bootstrap_retries=-1,       # محاولات لا نهائية
-            read_timeout=10,
-            write_timeout=10,
-            connect_timeout=10,
-            pool_timeout=10
+            poll_interval=3,
+            timeout=20,
+            close_loop=False
         )
-    except telegram.error.Conflict:
-        print("⚠️ Bot conflict detected. Switching to webhook mode...")
-        # بدلاً من Polling، استخدم Webhook (أكثر استقراراً)
-        run_bot_with_webhook()
     except Exception as e:
         print(f"❌ Bot error: {e}")
         print("ℹ️ Bot stopped, but Flask app continues...")
-
-def run_bot_with_webhook():
-    """تشغيل البوت بوضع Webhook (بديل أكثر استقراراً)"""
-    try:
-        app = ApplicationBuilder().token(TOKEN).build()
-        
-        # نفس ال handlers
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(CommandHandler("myorders", myorders_command))
-        app.add_handler(CommandHandler("stats", stats_command))
-        app.add_handler(CallbackQueryHandler(callback_handler))
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
-        
-        print("🌐 Bot running in webhook mode...")
-        print("✅ Bot is ready (webhook)")
-        
-        # البوت يعمل لكن بدون polling نشط
-        # سيظل Flask يعمل
-        while True:
-            time.sleep(3600)  # انتظار ساعة (البوت جاهز)
-            
-    except Exception as e:
-        print(f"❌ Webhook error: {e}")
             
 # ================= ENTRY POINT =================
 if __name__ == '__main__':
