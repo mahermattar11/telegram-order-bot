@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <button class="mobile-menu-btn d-none" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </button>
     <div class="container-fluid">
         <div class="row">
             <!-- الشريط الجانبي (نفس dashboard.html) -->
@@ -417,6 +420,24 @@
         function printOrders() {
             window.print();
         }
+    </script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // إظهار/إخفاء زر القائمة حسب حجم الشاشة
+        function checkMobileView() {
+            const menuBtn = document.querySelector('.mobile-menu-btn');
+            if (window.innerWidth < 768) {
+                menuBtn.classList.remove('d-none');
+            } else {
+                menuBtn.classList.add('d-none');
+            }
+        }
+
+        window.addEventListener('resize', checkMobileView);
+        checkMobileView(); // تحقق عند التحميل
     </script>
 </body>
 </html>

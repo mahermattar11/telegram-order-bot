@@ -21,6 +21,9 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo.svg') }}">
 </head>
 <body>
+    <button class="mobile-menu-btn d-none" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </button>
     <div class="container-fluid">
         <div class="row">
             <!-- الشريط الجانبي -->
@@ -188,8 +191,9 @@
                                     </td>
                                     <td class="text-muted">{{ order.created_at }}</td>
                                     <td>
-                                        <button class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-info-circle"></i> تفاصيل
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="window.open('/orders/{{ order.id }}', '_blank')">
+                                            تفاصيل
                                         </button>
                                     </td>
                                 </tr>
@@ -207,5 +211,23 @@
     
     <!-- ملف الجافاسكريبت الخاص -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // إظهار/إخفاء زر القائمة حسب حجم الشاشة
+        function checkMobileView() {
+            const menuBtn = document.querySelector('.mobile-menu-btn');
+            if (window.innerWidth < 768) {
+                menuBtn.classList.remove('d-none');
+            } else {
+                menuBtn.classList.add('d-none');
+            }
+        }
+
+        window.addEventListener('resize', checkMobileView);
+        checkMobileView(); // تحقق عند التحميل
+    </script>
 </body>
 </html>
