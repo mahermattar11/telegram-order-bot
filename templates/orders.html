@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كافة الطلبات | OrderlyBot</title>
+    
+    <!-- نفس روابط CSS من dashboard.html -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- الشريط الجانبي (نفس dashboard.html) -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="sidebar-header text-center py-4">
+                    <h4 class="fw-bold mb-0 text-white">OrderlyBot</h4>
+                    <small class="text-light">نظام إدارة الطلبات</small>
+                </div>
+                <div class="nav flex-column mt-4">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span>لوحة التحكم</span>
+                    </a>
+                    <a href="{{ url_for('orders_page') }}" class="nav-link active">
+                        <i class="bi bi-cart-fill"></i>
+                        <span>كافة الطلبات</span>
+                    </a>
+                    <a href="{{ url_for('orders_page') }}?status=new" class="nav-link">
+                        <i class="bi bi-bell-fill"></i>
+                        <span>طلبات جديدة</span>
+                        {% if new_orders_count > 0 %}
+                        <span class="badge bg-danger ms-auto">{{ new_orders_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('reports') }}" class="nav-link">
+                        <i class="bi bi-graph-up"></i>
+                        <span>التقارير</span>
+                    </a>
+                    <hr class="mx-3 opacity-10">
+                    <a href="{{ url_for('settings_page') }}" class="nav-link">
+                        <i class="bi bi-gear-fill"></i>
+                        <span>الإعدادات</span>
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="nav-link text-danger mt-5">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>تسجيل الخروج</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- المحتوى الرئيسي -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" id="content">
+                <!-- شريط العنوان والتصفية -->
+                <div class="d-flex justify-content-between align-items-center py-3 mb-4 border-bottom">
+                    <div>
+                        <h2 class="fw-bold">كافة الطلبات</h2>
+                        <p class="text-muted mb-0">إدارة ومتابعة جميع طلبات المتجر.</p>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('orders_page') }}" 
+                           class="btn btn-outline-primary {% if status_filter == 'all' %}active{% endif %}">
+                            الكل ({{ stats.total_orders }})
+                        </a>
+                        <a href="{{ url_for('orders_page') }}?status=new" 
+                           class="btn btn-outline-warning {% if status_filter == 'new' %}active{% endif %}">
+                            جديد ({{ stats.new_orders }})
+                        </a>
+                        <a href="{{ url_for('orders_page') }}?status=processing" 
+                           class="btn btn-outline-info {% if status_filter == 'processing' %}active{% endif %}">
+                            قيد التنفيذ
+                        </a>
+                        <a href="{{ url_for('orders_page') }}?status=completed" 
+                           class="btn btn-outline-success {% if status_filter == 'completed' %}active{% endif %}">
+                            مكتمل ({{ stats.completed_orders }})
+                        </a>
+                        <a href="{{ url_for('orders_page') }}?status=cancelled" 
+                           class="btn btn-outline-danger {% if status_filter == 'cancelled' %}active{% endif %}">
+                            ملغي
+                        </a>
+                    </div>
+                </div>
+
+                <!-- شريط البحث والإجراءات -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" 
+                                   placeholder="ابحث باسم العميل أو رقم الهاتف أو المنتج..." 
+                                   id="searchInput">
+                            <button class="btn btn-primary" onclick="searchOrders()">بحث</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-start">
+                        <div class="btn-group">
+                            <button class="btn btn-success" onclick="exportToExcel()">
+                                <i class="bi bi-file-excel"></i> تصدير Excel
+                            </button>
+                            <button class="btn btn-danger" onclick="exportToPDF()">
+                                <i class="bi bi-file-pdf"></i> تصدير PDF
+                            </button>
+                            <button class="btn btn-secondary" onclick="printOrders()">
+                                <i class="bi bi-printer"></i> طباعة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- جدول الطلبات -->
+                <div class="card-custom">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="ordersTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="50">
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    <th>الرقم</th>
+                                    <th>العميل</th>
+                                    <th>المنتج</th>
+                                    <th>الكمية</th>
+                                    <th>الحالة</th>
+                                    <th>التاريخ</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if orders %}
+                                    {% for order in orders %}
+                                    <tr data-order-id="{{ order.id }}" data-status="{{ order.status }}">
+                                        <td>
+                                            <input type="checkbox" class="form-check-input order-checkbox" 
+                                                   data-order-id="{{ order.id }}">
+                                        </td>
+                                        <td class="fw-bold">#{{ order.id }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar me-2">
+                                                    <i class="bi bi-person-circle text-secondary"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ order.customer_name }}</div>
+                                                    <small class="text-muted">{{ order.phone }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ order.product }}</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">
+                                                {{ order.quantity }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm status-badge 
+                                                    {% if order.status == 'new' %}btn-warning
+                                                    {% elif order.status == 'processing' %}btn-info
+                                                    {% elif order.status == 'completed' %}btn-success
+                                                    {% else %}btn-danger{% endif %}"
+                                                    data-bs-toggle="dropdown">
+                                                    {% if order.status == 'new' %}جديد
+                                                    {% elif order.status == 'processing' %}قيد التنفيذ
+                                                    {% elif order.status == 'completed' %}مكتمل
+                                                    {% else %}ملغي{% endif %}
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item status-change" 
+                                                           data-order-id="{{ order.id }}" 
+                                                           data-status="new">
+                                                            <span class="badge bg-warning me-2"></span> جديد
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item status-change" 
+                                                           data-order-id="{{ order.id }}" 
+                                                           data-status="processing">
+                                                            <span class="badge bg-info me-2"></span> قيد التنفيذ
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item status-change" 
+                                                           data-order-id="{{ order.id }}" 
+                                                           data-status="completed">
+                                                            <span class="badge bg-success me-2"></span> مكتمل
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item status-change" 
+                                                           data-order-id="{{ order.id }}" 
+                                                           data-status="cancelled">
+                                                            <span class="badge bg-danger me-2"></span> ملغي
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                        <td class="text-muted">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" 
+                                                        onclick="viewOrderDetails('{{ order.id }}')"
+                                                        title="تفاصيل">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" 
+                                                        onclick="contactCustomer('{{ order.phone }}', '{{ order.customer_name }}')"
+                                                        title="تواصل">
+                                                    <i class="bi bi-whatsapp"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" 
+                                                        onclick="deleteOrder('{{ order.id }}')"
+                                                        title="حذف">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="8" class="text-center py-5">
+                                            <i class="bi bi-cart-x display-4 text-muted"></i>
+                                            <h5 class="mt-3">لا توجد طلبات</h5>
+                                            <p class="text-muted">لم يتم العثور على أي طلبات حتى الآن.</p>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- الترقيم الصفحي -->
+                    {% if orders %}
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-muted">
+                            عرض <strong>{{ orders|length }}</strong> من أصل <strong>{{ stats.total_orders }}</strong> طلب
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0">
+                                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                                    <a class="page-link" href="{{ url_for('orders_page', status=status_filter, page=page-1) }}">السابق</a>
+                                </li>
+                                {% for p in range(1, total_pages+1) %}
+                                <li class="page-item {% if p == page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('orders_page', status=status_filter, page=p) }}">{{ p }}</a>
+                                </li>
+                                {% endfor %}
+                                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                                    <a class="page-link" href="{{ url_for('orders_page', status=status_filter, page=page+1) }}">التالي</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- ملف JavaScript الخاص بصفحة الطلبات -->
+    <script src="{{ url_for('static', filename='js/orders.js') }}"></script>
+    
+    <!-- SweetAlert2 للإشعارات الجميلة -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // كود JavaScript المباشر للصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            // تحديد جميع الطلبات
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.order-checkbox');
+                checkboxes.forEach(cb => cb.checked = this.checked);
+            });
+
+            // تغيير حالة الطلب
+            document.querySelectorAll('.status-change').forEach(item => {
+                item.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    const newStatus = this.dataset.status;
+                    
+                    Swal.fire({
+                        title: 'تغيير حالة الطلب',
+                        text: `هل تريد تغيير حالة الطلب #${orderId}؟`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'نعم، قم بالتغيير',
+                        cancelButtonText: 'إلغاء'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            updateOrderStatus(orderId, newStatus);
+                        }
+                    });
+                });
+            });
+
+            // البحث الفوري
+            document.getElementById('searchInput').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    searchOrders();
+                }
+            });
+        });
+
+        function updateOrderStatus(orderId, newStatus) {
+            fetch(`/api/orders/${orderId}/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم!',
+                        text: 'تم تحديث حالة الطلب بنجاح',
+                        timer: 2000
+                    });
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ!',
+                        text: data.error || 'حدث خطأ أثناء التحديث'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ!',
+                    text: 'فشل الاتصال بالسيرفر'
+                });
+            });
+        }
+
+        function viewOrderDetails(orderId) {
+            window.open(`/orders/${orderId}`, '_blank');
+        }
+
+        function contactCustomer(phone, name) {
+            const message = `مرحباً ${name}،`;
+            const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function deleteOrder(orderId) {
+            Swal.fire({
+                title: 'هل أنت متأكد؟',
+                text: "لن تتمكن من التراجع عن هذا الإجراء!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'نعم، احذفه!',
+                cancelButtonText: 'إلغاء'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/api/orders/${orderId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'تم الحذف!',
+                                text: 'تم حذف الطلب بنجاح',
+                                timer: 2000
+                            });
+                            setTimeout(() => location.reload(), 2000);
+                        }
+                    });
+                }
+            });
+        }
+
+        function searchOrders() {
+            const searchTerm = document.getElementById('searchInput').value;
+            if (searchTerm.trim()) {
+                window.location.href = `/orders?search=${encodeURIComponent(searchTerm)}`;
+            }
+        }
+
+        function exportToExcel() {
+            Swal.fire({
+                icon: 'info',
+                title: 'تصدير إلى Excel',
+                text: 'جاري تحضير الملف للتحميل...',
+                showConfirmButton: false,
+                timer: 1500
+            });
+            // سيتم إضافة الكود لاحقاً
+        }
+
+        function exportToPDF() {
+            Swal.fire({
+                icon: 'info',
+                title: 'تصدير إلى PDF',
+                text: 'جاري تحضير الملف للتحميل...',
+                showConfirmButton: false,
+                timer: 1500
+            });
+            // سيتم إضافة الكود لاحقاً
+        }
+
+        function printOrders() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

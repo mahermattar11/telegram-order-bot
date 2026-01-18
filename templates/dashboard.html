@@ -34,11 +34,11 @@
                         <i class="bi bi-grid-1x2-fill"></i>
                         <span>لوحة التحكم</span>
                     </a>
-                    <a href="/orders" class="nav-link">
+                    <a href="{{ url_for('orders_page') }}" class="nav-link">
                         <i class="bi bi-cart-fill"></i>
                         <span>كافة الطلبات</span>
                     </a>
-                    <a href="/orders?status=new" class="nav-link">
+                    <a href="{{ url_for('orders_page', status='new') }}" class="nav-link">
                         <i class="bi bi-bell-fill"></i>
                         <span>طلبات جديدة</span>
                         {% if stats.new_orders > 0 %}
@@ -139,7 +139,7 @@
                 <div class="card-custom">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="fw-bold mb-0">آخر الطلبات</h4>
-                        <a href="/orders" class="btn btn-primary btn-sm">
+                        <a href="{{ url_for('orders_page') }}" class="btn btn-primary btn-sm">
                             <i class="bi bi-eye me-1"></i> عرض الكل
                         </a>
                     </div>
