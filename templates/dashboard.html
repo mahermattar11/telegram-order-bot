@@ -44,7 +44,7 @@
                     <a href="{{ url_for('orders_page', status='new') }}" class="nav-link">
                         <i class="bi bi-bell-fill"></i>
                         <span>طلبات جديدة</span>
-                        {% if stats.new_orders > 0 %}
+                        {% if stats.new_orders and stats.new_orders > 0 %}
                         <span class="badge bg-danger ms-auto">{{ stats.new_orders }}</span>
                         {% endif %}
                     </a>
