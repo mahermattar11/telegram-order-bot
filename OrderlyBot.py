@@ -589,6 +589,103 @@ def dashboard():
                          orders=recent_orders,
                          datetime=datetime)
 
+@admin_app.route('/orders')
+@login_required
+def orders_page():
+    """صفحة كافة الطلبات"""
+    # جلب معاملات التصفية
+    status_filter = request.args.get('status', 'all')
+    search_term = request.args.get('search', '')
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    
+    try:
+        # جلب الطلبات مع التصفية
+        if status_filter != 'all':
+            orders = db.get_orders_with_filters(status_filter=status_filter, limit=per_page)
+        else:
+            orders = db.get_orders_with_filters(limit=per_page)
+        
+        # تطبيق البحث إذا وجد
+        if search_term:
+            orders = [o for o in orders if 
+                    search_term.lower() in o['customer_name'].lower() or 
+                    search_term in str(o.get('phone', '')) or
+                    search_term.lower() in o['product'].lower()]
+        
+        # جلب الإحصائيات
+        stats = db.get_advanced_stats()
+        
+        # عد الطلبات الجديدة
+        db.cursor.execute('SELECT COUNT(*) FROM orders WHERE merchant_id = 1 AND status = %s', ('new',))
+        new_orders_count = db.cursor.fetchone()['count']
+        
+        # حساب الترقيم الصفحي
+        total_orders = len(orders)
+        total_pages = (total_orders + per_page - 1) // per_page
+        
+        return render_template('orders.html',
+                            orders=orders,
+                            stats=stats,
+                            status_filter=status_filter,
+                            new_orders_count=new_orders_count,
+                            page=page,
+                            total_pages=total_pages,
+                            datetime=datetime)
+    except Exception as e:
+        print(f"❌ Error loading orders: {e}")
+        return render_template('orders.html',
+                            orders=[],
+                            stats={},
+                            status_filter='all',
+                            new_orders_count=0,
+                            page=1,
+                            total_pages=1,
+                            datetime=datetime)
+
+
+@admin_app.route('/orders/<int:order_id>')
+@login_required
+def order_details_page(order_id):
+    """صفحة تفاصيل الطلب"""
+    try:
+        # جلب تفاصيل الطلب
+        db.cursor.execute('SELECT * FROM orders WHERE id = %s AND merchant_id = 1', (order_id,))
+        order = db.cursor.fetchone()
+        
+        if not order:
+            return render_template('order_details.html', 
+                                error="الطلب غير موجود",
+                                order=None)
+        
+        return render_template('order_details.html',
+                            order=order,
+                            datetime=datetime)
+    except Exception as e:
+        print(f"❌ Error loading order details: {e}")
+        return render_template('order_details.html',
+                            error=str(e),
+                            order=None)
+
+
+@admin_app.route('/settings')
+@login_required
+def settings_page():
+    """صفحة الإعدادات"""
+    try:
+        # جلب بيانات التاجر
+        db.cursor.execute('SELECT * FROM merchants WHERE id = 1')
+        merchant = db.cursor.fetchone()
+        
+        return render_template('settings.html',
+                            merchant=merchant,
+                            datetime=datetime)
+    except Exception as e:
+        print(f"❌ Error loading settings: {e}")
+        return render_template('settings.html',
+                            merchant=None,
+                            error=str(e))
+
 @admin_app.route('/reports')
 @login_required
 def reports():
@@ -691,7 +788,7 @@ def get_stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_app.route('/api/orders/new/count', methods=['GET'])
+@admin_app.route('/api/orders/new/count', methods=['GET']) 
 @login_required
 def new_orders_count():
     """عدد الطلبات الجديدة"""
@@ -708,6 +805,69 @@ def new_orders_count():
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_app.route('/api/orders/export/excel', methods=['GET'])
+@login_required
+def export_orders_excel():
+    """تصدير الطلبات إلى Excel"""
+    try:
+        # جلب جميع الطلبات
+        orders = db.get_orders_with_filters(limit=1000)
+        
+        # تحضير البيانات
+        data = []
+        for order in orders:
+            data.append({
+                'رقم الطلب': order['id'],
+                'اسم العميل': order['customer_name'],
+                'الهاتف': order['phone'],
+                'المنتج': order['product'],
+                'الكمية': order['quantity'],
+                'الحالة': order['status'],
+                'التاريخ': order['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': data,
+            'count': len(data)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@admin_app.route('/api/orders/bulk/status', methods=['POST'])
+@login_required
+def bulk_update_status():
+    """تحديث حالة عدة طلبات دفعة واحدة"""
+    try:
+        data = request.get_json()
+        order_ids = data.get('order_ids', [])
+        new_status = data.get('status')
+        
+        if not order_ids or not new_status:
+            return jsonify({'error': 'Missing parameters'}), 400
+        
+        # تحديث جميع الطلبات
+        updated_count = 0
+        for order_id in order_ids:
+            db.cursor.execute('''
+                UPDATE orders 
+                SET status = %s 
+                WHERE id = %s AND merchant_id = 1
+            ''', (new_status, order_id))
+            updated_count += 1
+        
+        db.conn.commit()
+        
+        return jsonify({
+            'success': True,
+            'updated_count': updated_count,
+            'message': f'تم تحديث {updated_count} طلب'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @admin_app.route('/api/orders/<int:order_id>', methods=['GET'])
 @login_required
